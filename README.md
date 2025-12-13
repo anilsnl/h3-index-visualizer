@@ -4,7 +4,7 @@ An interactive web application for visualizing and exploring Uber's H3 hexagonal
 
 **Live Demo:** [https://h3-map.senel.tr](https://h3-map.senel.tr)
 
-![H3 Index Visualizer](images/screenshot-main.png)
+![H3 Index Visualizer](images/main-interface.png)
 
 ## Features
 
@@ -53,19 +53,16 @@ An interactive web application for visualizing and exploring Uber's H3 hexagonal
 ## Screenshots
 
 ### Main Interface
-![Main Interface](images/screenshot-main.png)
+![Main Interface](images/main-interface.png)
+*The main interface showing the interactive map centered on Anıtkabir, Ankara with H3 hexagonal cells overlaid.*
 
-### By H3 ID Tab
-![Search by H3 ID](images/screenshot-h3-id.png)
+### Cell Details View
+![Cell Details](images/cell-details-view.png)
+*Detailed view showing H3 cell information, resolution, area, center coordinates, and parent layer hierarchy.*
 
-### By Coordinates Tab
-![Search by Coordinates](images/screenshot-coordinates.png)
-
-### Cell Details
-![Cell Details Panel](images/screenshot-details.png)
-
-### Reference Table
-![H3 Resolution Table](images/screenshot-table.png)
+### Resolution Reference Table
+![H3 Resolution Table](images/resolution-table.png)
+*Complete H3 resolution statistics table showing hexagon counts, edge lengths, diameters, and areas for all 16 resolution levels.*
 
 ## Technologies Used
 
@@ -125,12 +122,12 @@ Then visit `http://localhost:8000`
 
 ```
 h3-index-visualizer/
-├── index.html          # Main application (single-file)
-├── images/             # Screenshots and assets
-│   ├── screenshot-main.png
-│   ├── screenshot-h3-id.png
-│   └── ...
-└── README.md          # This file
+├── index.html                    # Main application (single-file)
+├── images/                       # Screenshots and assets
+│   ├── main-interface.png        # Main interface screenshot
+│   ├── cell-details-view.png     # Cell details panel screenshot
+│   └── resolution-table.png      # H3 resolution reference table
+└── README.md                     # This file
 ```
 
 ## Configuration
