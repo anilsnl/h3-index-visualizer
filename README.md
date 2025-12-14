@@ -22,6 +22,11 @@ An interactive web application for visualizing and exploring Uber's H3 hexagonal
 - Cell center point markers
 - Color-coded visualization with dark theme
 - Parent layer hierarchy (zoom out to see larger cells)
+- **K-Factor Neighborhood Rings**
+  - Display neighboring cells within 1-10 rings around selected cell
+  - Uses H3's `gridDisk` algorithm for accurate neighbor detection
+  - Graduated opacity based on distance (closer neighbors more visible)
+  - Interactive popups showing neighbor cell IDs and ring distance
 - Detailed cell information display
 
 ### Advanced Features
@@ -91,7 +96,23 @@ An interactive web application for visualizing and exploring Uber's H3 hexagonal
 - **Click on Map**: Instantly get the H3 cell for any location
 - **Locate Me**: Click to find your current location's H3 cell
 - **Parent Layers**: Click any parent cell to zoom out and explore larger hexagons
+- **K-Factor Neighborhood Rings**: Use the dropdown to display neighboring cells
+  - Select `k=1` to show immediate neighbors (~7 cells)
+  - Select `k=2` to show cells within 2 rings (~19 cells)
+  - Up to `k=10` for extensive neighborhood analysis (~331 cells)
+  - Select "unset" to hide neighbors and show only the main cell
+  - Neighbors rendered in blue (or orange in swap mode) with lower opacity
 - **Swap Lat/Lon**: Debug button to swap coordinates if needed
+
+### Exploring Neighborhoods
+- **K-Factor Selection**: Use the dropdown below the format selection
+- Select a k value (1-10) to visualize neighboring cells
+- Neighbors are color-coded:
+  - **Blue** neighbors in normal mode
+  - **Orange** neighbors in swap mode
+  - Main cell remains **green** (or **amber** in swap mode) with higher opacity
+- Click on any neighbor cell's popup to see its details
+- Great for understanding spatial relationships and H3 grid patterns
 
 ### Language Switching
 - Use the language switcher in the header (TR/EN/DE)
@@ -135,10 +156,13 @@ h3-index-visualizer/
 ### Default Settings
 You can modify these settings in `index.html`:
 
-- **Default Location**: Line 887-888 (currently Anıtkabir, Ankara)
-- **Default Resolution**: Line 889 (currently Res 11)
-- **Coordinate Resolution**: Line 586 (Res 15 for max detail)
-- **Locate Me Resolution**: Line 832 (Res 15)
+- **Default Location**: Line ~925 (currently Anıtkabir, Ankara)
+- **Default Resolution**: Line ~927 (currently Res 11)
+- **Default K-Factor**: Line 485 (`currentKFactor = 'unset'`)
+- **Coordinate Resolution**: Line ~624 (Res 15 for max detail)
+- **Locate Me Resolution**: Line ~870 (Res 15)
+- **Neighbor Colors**: Line 866-867 (blue `#3b82f6` or orange `#f97316`)
+- **Neighbor Opacity**: Line 860-862 (graduated 0.15-0.05)
 
 ### Language Settings
 - **Supported Languages**: `tr`, `en`, `de` (Line 347-350)
@@ -154,6 +178,19 @@ You can modify these settings in `index.html`:
 | 11         | 2,150 m²    | 24.9 m      | Buildings (default)     |
 | 12         | 307 m²      | 9.4 m       | Building level          |
 | 15         | 0.9 m²      | 0.5 m       | Maximum detail          |
+
+### K-Factor Performance Guide
+
+| k Value | Approximate Cells | Use Case                        |
+|---------|-------------------|---------------------------------|
+| k=1     | 7 cells          | Immediate neighbors             |
+| k=2     | 19 cells         | Local neighborhood              |
+| k=3     | 37 cells         | Extended area                   |
+| k=5     | 91 cells         | District-level analysis         |
+| k=7     | 169 cells        | Large area coverage             |
+| k=10    | 331 cells        | Maximum neighborhood analysis   |
+
+*Note: Actual cell count may vary slightly due to pentagon distortions and grid topology.*
 
 ## Browser Support
 

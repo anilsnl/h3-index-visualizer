@@ -94,7 +94,32 @@
                             <span class="text-xs text-slate-300 group-hover:text-white" data-i18n="radioDec">Decimal (Long)</span>
                         </label>
                     </div>
-                    
+
+                    <!-- K-FACTOR SELECTION -->
+                    <div class="bg-slate-800/50 p-2 rounded border border-slate-700/50">
+                        <label class="text-xs text-slate-400 uppercase font-bold mb-2 block" data-i18n="labelKFactor">
+                            K-Factor (Neighborhood Rings)
+                        </label>
+                        <select id="kFactorSelect"
+                                class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-white focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer">
+                            <option value="unset" data-i18n="kFactorUnset">None (Main cell only)</option>
+                            <option value="1">k=1 (1 ring)</option>
+                            <option value="2">k=2 (2 rings)</option>
+                            <option value="3">k=3 (3 rings)</option>
+                            <option value="4">k=4 (4 rings)</option>
+                            <option value="5">k=5 (5 rings)</option>
+                            <option value="6">k=6 (6 rings)</option>
+                            <option value="7">k=7 (7 rings)</option>
+                            <option value="8">k=8 (8 rings)</option>
+                            <option value="9">k=9 (9 rings)</option>
+                            <option value="10">k=10 (10 rings)</option>
+                        </select>
+                        <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
+                            <i data-lucide="info" class="w-3 h-3"></i>
+                            <span data-i18n="kFactorHint">Shows neighboring cells within k rings</span>
+                        </div>
+                    </div>
+
                     <div class="relative">
                         <input type="text" id="h3Input" placeholder="Örn: 8928308280fffff" value=""
                             class="w-full bg-slate-900 border border-slate-600 rounded-lg py-3 pl-4 pr-12 text-white focus:ring-2 focus:ring-blue-500 font-mono text-sm shadow-inner transition-all">
@@ -291,7 +316,10 @@
                 typeVertex: "Vertex (Nokta)",
                 phHex: "Örn: 8928308280fffff", phDec: "Örn: 617700169546072063",
                 errCoordEmpty: "Hatalı Koordinat: Lütfen Enlem ve Boylam giriniz.",
-                errCoordNan: "Hatalı Koordinat: Lütfen geçerli sayı giriniz."
+                errCoordNan: "Hatalı Koordinat: Lütfen geçerli sayı giriniz.",
+                labelKFactor: "K-Faktör (Komşuluk Halkaları)",
+                kFactorUnset: "Yok (Sadece ana hücre)",
+                kFactorHint: "K halka içindeki komşu hücreleri gösterir"
             },
             en: {
                 githubLabel: "GitHub Repo",
@@ -313,7 +341,10 @@
                 typeVertex: "Vertex (Point)",
                 phHex: "Ex: 8928308280fffff", phDec: "Ex: 617700169546072063",
                 errCoordEmpty: "Invalid Coords: Please enter Lat and Lon.",
-                errCoordNan: "Invalid Coords: Please enter valid numbers."
+                errCoordNan: "Invalid Coords: Please enter valid numbers.",
+                labelKFactor: "K-Factor (Neighborhood Rings)",
+                kFactorUnset: "None (Main cell only)",
+                kFactorHint: "Shows neighboring cells within k rings"
             },
             de: {
                 githubLabel: "GitHub Repo",
@@ -335,7 +366,10 @@
                 typeVertex: "Vertex (Punkt)",
                 phHex: "Bsp: 8928308280fffff", phDec: "Bsp: 617700169546072063",
                 errCoordEmpty: "Ungültige Koordinaten: Bitte Lat und Lon eingeben.",
-                errCoordNan: "Ungültige Koordinaten: Bitte gültige Zahlen eingeben."
+                errCoordNan: "Ungültige Koordinaten: Bitte gültige Zahlen eingeben.",
+                labelKFactor: "K-Faktor (Nachbarschaftsringe)",
+                kFactorUnset: "Keine (nur Hauptzelle)",
+                kFactorHint: "Zeigt Nachbarzellen innerhalb von k Ringen"
             }
         };
 
@@ -417,6 +451,7 @@
             latInput: document.getElementById('latInput'),
             lonInput: document.getElementById('lonInput'),
             idFormats: document.getElementsByName('idFormat'),
+            kFactorSelect: document.getElementById('kFactorSelect'),
             
             // BUTTONS
             btn: document.getElementById('searchBtn'),
@@ -447,6 +482,7 @@
 
         // --- FORMAT SELECTION LOGIC ---
         let currentIdFormat = 'hex'; // Default
+        let currentKFactor = 'unset'; // Default: no neighbors shown
         
         // Listener for Radio Buttons
         els.idFormats.forEach(radio => {
@@ -459,6 +495,16 @@
                     els.input.placeholder = i18n[currentLang].phDec;
                 }
             });
+        });
+
+        // --- K-FACTOR SELECTION LOGIC ---
+        els.kFactorSelect.addEventListener('change', (e) => {
+            currentKFactor = e.target.value;
+
+            // Re-render if there's current data
+            if (currentData) {
+                renderMap();
+            }
         });
 
         // --- TAB LOGIC ---
@@ -761,31 +807,101 @@
             let boundary = currentData.boundary ? currentData.boundary.map(p => [...p]) : null;
 
             if (isSwapped) {
-                center = [center[1], center[0]]; 
+                center = [center[1], center[0]];
                 if(boundary) boundary = boundary.map(p => [p[1], p[0]]);
+            }
+
+            // --- RENDER NEIGHBORS FIRST (so main cell renders on top) ---
+            if (currentKFactor !== 'unset' && currentData.hex && !currentData.isVertex) {
+                renderNeighbors(currentData.hex, parseInt(currentKFactor));
             }
 
             if (boundary) {
                 const poly = L.polygon(boundary, {
-                    color: isSwapped ? '#fbbf24' : '#4ade80', 
+                    color: isSwapped ? '#fbbf24' : '#4ade80',
                     fillColor: isSwapped ? '#fbbf24' : '#4ade80',
-                    fillOpacity: 0.2, weight: 2
+                    fillOpacity: 0.3, // Increased from 0.2 to stand out from neighbors
+                    weight: 3 // Increased from 2 for thicker border
                 }).addTo(layerGroup);
-                map.fitBounds(poly.getBounds());
+
+                // Only auto-fit bounds when neighbors are not shown
+                if (currentKFactor === 'unset') {
+                    map.fitBounds(poly.getBounds());
+                }
             } else {
                 map.setView(center, 13);
             }
 
             L.circleMarker(center, {
-                radius: 5, color: '#fff', 
-                fillColor: isSwapped ? '#f59e0b' : '#3b82f6', 
-                fillOpacity: 1
+                radius: 6, // Slightly larger
+                color: '#fff',
+                fillColor: isSwapped ? '#f59e0b' : '#3b82f6',
+                fillOpacity: 1,
+                weight: 2
             }).addTo(layerGroup).bindPopup(
                 `Merkez: ${center[0].toFixed(5)}, ${center[1].toFixed(5)}` + 
                 (isSwapped ? '<br><b class="text-amber-500">⚠ SWAPPED</b>' : '')
             );
 
             els.center.innerHTML = `Lat: ${center[0].toFixed(6)} <br> Lon: ${center[1].toFixed(6)}`;
+        }
+
+        function renderNeighbors(cellHex, k) {
+            try {
+                // Get all cells within k rings using gridDisk
+                const neighborCells = h3.gridDisk(cellHex, k);
+
+                // Count for statistics
+                const totalNeighbors = neighborCells.length - 1; // Exclude center cell
+
+                neighborCells.forEach(neighborHex => {
+                    // Skip the center cell itself
+                    if (neighborHex === cellHex) return;
+
+                    try {
+                        const neighborBoundary = h3.cellToBoundary(neighborHex);
+                        let boundary = neighborBoundary.map(p => [...p]);
+
+                        // Apply swap if active
+                        if (isSwapped) {
+                            boundary = boundary.map(p => [p[1], p[0]]);
+                        }
+
+                        // Calculate distance from center for graduated opacity
+                        const distance = h3.gridDistance(cellHex, neighborHex);
+                        const opacityBase = 0.15;
+                        const opacityDecay = 0.02 * distance;
+                        const finalOpacity = Math.max(0.05, opacityBase - opacityDecay);
+
+                        // Render neighbor polygon with distinct styling
+                        const neighborPoly = L.polygon(boundary, {
+                            color: isSwapped ? '#f97316' : '#3b82f6',      // Orange or blue
+                            fillColor: isSwapped ? '#f97316' : '#3b82f6',
+                            fillOpacity: finalOpacity,
+                            weight: 1,
+                            opacity: 0.4
+                        }).addTo(layerGroup);
+
+                        // Add popup with info
+                        neighborPoly.bindPopup(`
+                            <div class="text-xs">
+                                <b>Neighbor Cell</b><br>
+                                <code class="text-[10px]">${neighborHex}</code><br>
+                                <span class="text-slate-500">Distance: ${distance} ring(s)</span>
+                            </div>
+                        `);
+
+                    } catch (err) {
+                        console.warn(`Failed to render neighbor ${neighborHex}:`, err);
+                    }
+                });
+
+                // Optional: Show neighbor count in console
+                console.log(`Rendered ${totalNeighbors} neighbors at k=${k}`);
+
+            } catch (err) {
+                console.error('Error rendering neighbors:', err);
+            }
         }
 
         function resetSwapBtn() {
