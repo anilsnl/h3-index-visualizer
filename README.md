@@ -1,12 +1,16 @@
 # H3 Index Visualizer
 
-An interactive web application for visualizing and exploring Uber's H3 hexagonal hierarchical geospatial indexing system. Built with vanilla JavaScript and featuring a modern dark-themed UI.
+An interactive web application for visualizing and exploring Uber's H3 hexagonal hierarchical geospatial indexing system. Built with vanilla JavaScript and featuring a modern dark-themed UI with advanced density visualization capabilities.
 
 **Live Demo:** [https://h3-map.senel.tr](https://h3-map.senel.tr)
 
 ![H3 Index Visualizer](images/main-interface.png)
 
 ## Features
+
+The application offers two main modes accessible via tabs:
+- **H3 Explorer**: Search and visualize individual H3 cells with neighborhood analysis
+- **Density Viewer**: Upload and visualize spatial density data with heat maps and aggregations
 
 ### Core Functionality
 - **Dual Input Modes**
@@ -28,6 +32,31 @@ An interactive web application for visualizing and exploring Uber's H3 hexagonal
   - Graduated opacity based on distance (closer neighbors more visible)
   - Interactive popups showing neighbor cell IDs and ring distance
 - Detailed cell information display
+
+### Density Viewer
+- **CSV Data Upload**
+  - Upload custom density data (user counts, population, sales, etc.)
+  - Auto-validates H3 codes and resolution consistency
+  - Supports files with thousands of cells (tested with 2,249+ cells)
+- **Heat Map Visualization**
+  - Percentile-based 5-tier color gradient (Blue → Green → Yellow → Orange → Red)
+  - Automatic color scaling based on data distribution
+  - Density labels displayed on each hexagon with abbreviated format (1.2K, 3.5M)
+- **Parent Cell Aggregation**
+  - Automatic SUM aggregation when navigating to parent cells
+  - Maintains color scale consistency across resolution levels
+  - Preserves data integrity during resolution changes
+- **Auto-Focus**
+  - Automatically centers map on highest density cell after upload
+  - Smart zoom level calculation based on data resolution
+- **Dataset Statistics**
+  - Real-time display of min/max/count values
+  - Color scale legend with percentile thresholds
+  - File information and resolution details
+- **Tab-Based Interface**
+  - Separate "Density Viewer" tab for clean UI organization
+  - Independent from H3 Explorer functionality
+  - Clear data management with one-click reset
 
 ### Advanced Features
 - **Multi-Language Support**
@@ -118,6 +147,72 @@ An interactive web application for visualizing and exploring Uber's H3 hexagonal
 - Use the language switcher in the header (TR/EN/DE)
 - Language is auto-detected on first visit
 
+### Using the Density Viewer
+1. **Switch to Density Viewer Tab**
+   - Click the **"Density Viewer"** tab at the top of the sidebar
+   - This separates density visualization from H3 exploration
+
+2. **Prepare Your CSV File**
+   - Format: `h3code,density` (two columns)
+   - H3 codes must be in hexadecimal format (e.g., `871ec9111ffffff`)
+   - All cells must be the same resolution
+   - Example:
+     ```csv
+     h3code,density
+     871ec9111ffffff,698
+     871ec9113ffffff,548
+     871ec91adffffff,490
+     ```
+
+3. **Upload Density Data**
+   - Click **"Load Density Data"** button
+   - Select your CSV file
+   - The app automatically:
+     - Validates all H3 codes and resolution consistency
+     - Calculates percentile-based color scale
+     - Renders heat map with density labels
+     - Centers map on highest density cell
+
+4. **View Statistics**
+   - Dataset information panel shows:
+     - Filename and resolution
+     - Total cell count
+     - Min/Max density values
+     - Color scale legend with thresholds
+
+5. **Explore Parent Aggregations**
+   - Click any parent cell in the info panel
+   - Density values automatically aggregate (SUM) to parent resolution
+   - Color scale recalculates for new resolution level
+
+6. **Clear Data**
+   - Click **"Clear Density Data"** button to reset
+   - Returns to clean state, ready for new upload
+
+### Converting Decimal H3 IDs to Hexadecimal
+If your data uses decimal (unsigned long) H3 IDs, use the included conversion script:
+
+```bash
+# Convert from decimal format to hexadecimal
+python3 convert_ulong_to_hex.py input.csv output.csv
+
+# Example with sample data
+python3 convert_ulong_to_hex.py sample_points.csv sample-density.csv
+```
+
+**Input format** (decimal):
+```csv
+608527532488130559,667
+608527532521684991,657
+```
+
+**Output format** (hexadecimal):
+```csv
+h3code,density
+871ec9111ffffff,667
+871ec9113ffffff,657
+```
+
 ## Installation
 
 ### Option 1: Direct Use
@@ -143,12 +238,16 @@ Then visit `http://localhost:8000`
 
 ```
 h3-index-visualizer/
-├── index.html                    # Main application (single-file)
-├── images/                       # Screenshots and assets
-│   ├── main-interface.png        # Main interface screenshot
-│   ├── cell-details-view.png     # Cell details panel screenshot
-│   └── resolution-table.png      # H3 resolution reference table
-└── README.md                     # This file
+├── index.html                      # Main application (single-file)
+├── convert_ulong_to_hex.py         # Utility to convert decimal H3 IDs to hex
+├── sample-density.csv              # Sample density data (2,249 cells)
+├── sample_points.csv               # Source data in decimal format
+├── DENSITY_VIEWER_ACCEPTANCE_CRITERIA.md  # Feature requirements doc
+├── images/                         # Screenshots and assets
+│   ├── main-interface.png          # Main interface screenshot
+│   ├── cell-details-view.png       # Cell details panel screenshot
+│   └── resolution-table.png        # H3 resolution reference table
+└── README.md                       # This file
 ```
 
 ## Configuration
@@ -167,6 +266,44 @@ You can modify these settings in `index.html`:
 ### Language Settings
 - **Supported Languages**: `tr`, `en`, `de` (Line 347-350)
 - **Default Language**: English with auto-detection (Line 356)
+
+### Density Viewer Settings
+- **Color Scale Tiers**: 5 percentile-based tiers (20%, 40%, 60%, 80%, 100%)
+- **Color Gradient**: Blue → Green → Yellow → Orange → Red
+  - Blue: `#3b82f6` (≤20th percentile)
+  - Green: `#22c55e` (≤40th percentile)
+  - Yellow: `#eab308` (≤60th percentile)
+  - Orange: `#f97316` (≤80th percentile)
+  - Red: `#ef4444` (>80th percentile)
+- **Number Formatting**: Automatic abbreviation (1K, 1M, 1B)
+- **Aggregation Method**: SUM for parent cells
+- **Polygon Opacity**: 0.6 for filled areas
+
+## CSV Format Reference
+
+### Required Format
+```csv
+h3code,density
+871ec9111ffffff,667
+871ec9113ffffff,657
+```
+
+### Validation Rules
+- ✅ **Two columns**: H3 code and density value
+- ✅ **Hexadecimal format**: H3 codes must be in hex (not decimal)
+- ✅ **Same resolution**: All cells must be the same H3 resolution
+- ✅ **Non-negative values**: Density must be ≥ 0
+- ✅ **Optional header**: First row can be `h3code,density` (auto-detected)
+
+### Common Errors
+- ❌ Mixed resolutions (e.g., mixing Res 7 and Res 8 cells)
+- ❌ Invalid H3 codes (validated using `h3.isValidCell()`)
+- ❌ Decimal format IDs (use `convert_ulong_to_hex.py` to convert)
+- ❌ Missing values or malformed rows
+
+### Duplicate Handling
+- If the same H3 code appears multiple times, density values are **summed**
+- A warning is logged to the console showing duplicate count
 
 ## H3 Resolution Reference
 
